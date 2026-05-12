@@ -1,0 +1,190 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth, useToast } from '../App.jsx';
+import { getProjects, createProject, deleteProject, updateProject, logout as apiLogout } from '../api.js';
+
+function ProjectModal({ project, onClose, onSaved }) {
+  const [form, setForm] = useState({ name: project?.name || '', description: project?.description || '' });
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
+  const isEdit = !!project;
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (isEdit) {
+        await updateProject(project.id, form);
+        toast('Project updated ✓', 'success');
+      } else {
+        await createProject(form);
+        toast('Project created! ✈️', 'success');
+      }
+      onSaved();
+      onClose();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <h2 className="modal-title">{isEdit ? 'Edit project' : 'New project'}</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <form onSubmit={handleSubmit}>
+            <div className="field">
+              <label>Project name</label>
+              <input
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Summer in Japan"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="field">
+              <label>Description (optional)</label>
+              <textarea
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="What's this trip about?"
+                rows={3}
+                style={{ resize: 'vertical' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
+              <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-primary" style={{ width: 'auto' }} disabled={loading}>
+                {loading ? 'Saving…' : isEdit ? 'Save changes' : 'Create project'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const EMOJIS = ['🗾', '🏔️', '🏖️', '🏛️', '🌿', '🏙️', '🌊', '🏜️', '🌸'];
+
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(null); 
+  const { logout } = useAuth();
+  const toast = useToast();
+  const navigate = useNavigate();
+
+  async function load() {
+    try {
+      const data = await getProjects();
+      setProjects(data);
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleDelete(e, id) {
+    e.stopPropagation();
+    if (!confirm('Delete this project and all its places?')) return;
+    try {
+      await deleteProject(id);
+      setProjects(ps => ps.filter(p => p.id !== id));
+      toast('Project deleted', 'success');
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  async function handleLogout() {
+    try { await apiLogout(); } catch {}
+    logout();
+  }
+
+  return (
+    <div className="app-layout">
+      <header className="topbar">
+        <div className="topbar-logo">🗺️ Travel Planner</div>
+        <div className="topbar-actions">
+          <button className="btn btn-ghost btn-sm" onClick={handleLogout}>Sign out</button>
+        </div>
+      </header>
+
+      <main className="main-content">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">
+              My Projects
+              <span>{projects.length} {projects.length === 1 ? 'trip' : 'trips'} planned</span>
+            </h1>
+          </div>
+          <button className="btn btn-primary" style={{ width: 'auto' }} onClick={() => setModal('create')}>
+            + New project
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="spinner" />
+        ) : (
+          <div className="projects-grid">
+            {projects.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-state-icon">✈️</div>
+                <div className="empty-state-title">No trips yet</div>
+                <p className="empty-state-sub">Create your first travel project to get started.</p>
+              </div>
+            )}
+            {projects.map((p, i) => (
+              <div key={p.id} className="project-card" onClick={() => navigate(`/projects/${p.id}`)}>
+                <div className="project-card-map">
+                  <div className="project-card-map-placeholder">
+                    {EMOJIS[i % EMOJIS.length]}
+                  </div>
+                </div>
+                <div className="project-card-body">
+                  <div className="project-card-name">{p.name}</div>
+                  {p.description && <div className="project-card-desc">{p.description}</div>}
+                  <div className="project-card-meta">
+                    <div className="project-card-places">
+                      📍 {p.places_count ?? 0} / 10 places
+                    </div>
+                    <div className="project-card-actions">
+                      <button
+                        className="btn btn-ghost btn-icon"
+                        title="Edit"
+                        onClick={e => { e.stopPropagation(); setModal(p); }}
+                      >✏️</button>
+                      <button
+                        className="btn btn-ghost btn-icon"
+                        title="Delete"
+                        onClick={e => handleDelete(e, p.id)}
+                      >🗑️</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      {modal && (
+        <ProjectModal
+          project={modal === 'create' ? null : modal}
+          onClose={() => setModal(null)}
+          onSaved={load}
+        />
+      )}
+    </div>
+  );
+}
