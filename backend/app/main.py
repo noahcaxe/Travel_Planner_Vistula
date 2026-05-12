@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.middleware.error_handler import error_handler
 from app.router.auth import router as auth_router
 from app.router.projects import router as projects_router
@@ -8,6 +9,14 @@ from app.core.container import lifespan
 setup_logging()
 app = FastAPI(lifespan=lifespan)
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://frontend-travel-planner.onrender.com"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)
 app.include_router(projects_router)
