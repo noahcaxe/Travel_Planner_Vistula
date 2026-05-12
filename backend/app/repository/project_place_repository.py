@@ -12,23 +12,23 @@ class ProjectPlaceRepository:
         self,
         session: AsyncSession,
         project_id: uuid.UUID,
-        external_id: uuid.UUID,
-        title: str,
-        artist: str | None,
-        image_url: str | None,
+        name: str,
+        latitude: float,
+        longitude: float,
+        address: str | None = None,
+        notes: str | None = None,
     ) -> ProjectPlace:
         place = ProjectPlace(
             project_id=project_id,
-            external_id=external_id,
-            title=title,
-            artist=artist,
-            image_url=image_url,
+            name=name,
+            address=address,
+            latitude=latitude,
+            longitude=longitude,
+            notes=notes,
         )
-
         session.add(place)
         await session.flush()
         await session.refresh(place)
-
         return place
 
     async def get_by_id(
@@ -38,20 +38,6 @@ class ProjectPlaceRepository:
     ) -> ProjectPlace | None:
         result = await session.execute(
             select(ProjectPlace).where(ProjectPlace.id == place_id)
-        )
-        return result.scalar_one_or_none()
-
-    async def get_by_external_id(
-        self,
-        session: AsyncSession,
-        project_id: uuid.UUID,
-        external_id: int,         
-    ) -> ProjectPlace | None:
-        result = await session.execute(
-            select(ProjectPlace).where(
-                ProjectPlace.project_id == project_id,
-                ProjectPlace.external_id == external_id,
-            )
         )
         return result.scalar_one_or_none()
 
@@ -73,7 +59,6 @@ class ProjectPlaceRepository:
         session.add(place)
         await session.flush()
         await session.refresh(place)
-
         return place
 
     async def delete(

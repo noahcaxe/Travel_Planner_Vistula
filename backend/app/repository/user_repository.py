@@ -11,10 +11,12 @@ class UserRepository:
     async def create(
         self,
         session: AsyncSession,
+        username: str,
         email: str,
         password_hash: str,
     ) -> User:
         user = User(
+            username=username,
             email=email,
             password_hash=password_hash,
         )

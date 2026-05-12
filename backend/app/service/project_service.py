@@ -26,6 +26,7 @@ class ProjectService:
             name=data.name,
             description=data.description,
             start_date=data.start_date,
+            cover_url=data.cover_url,
         )
 
     @with_session_readonly
@@ -80,6 +81,9 @@ class ProjectService:
 
         if data.is_completed is not None:
             project.is_completed = data.is_completed
+
+        if data.cover_url is not None:
+            project.cover_url = data.cover_url
 
         return await self._project_repo.update(session, project)
 

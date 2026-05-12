@@ -6,7 +6,7 @@ from app.model.projectplace import ProjectPlace
 from app.repository.project_place_repository import ProjectPlaceRepository
 from app.repository.project_repository import ProjectRepository
 from app.db.session import with_session, with_session_readonly
-from app.schemas.project_place import ProjectPlaceUpdate
+from app.schemas.project_place import ProjectPlaceUpdate, ProjectPlaceCreate
 
 
 class ProjectPlaceService:
@@ -37,32 +37,22 @@ class ProjectPlaceService:
         session: AsyncSession,
         project_id: uuid.UUID,
         user_id: uuid.UUID,
-        external_id: int,          
+        data: ProjectPlaceCreate,
     ) -> ProjectPlace:
         await self._get_project_or_raise(session, project_id, user_id)
 
-       
         existing_places = await self._place_repo.list_by_project(session, project_id)
         if len(existing_places) >= 10:
             raise ValueError("Project cannot have more than 10 places")
 
-        
-        existing = await self._place_repo.get_by_external_id(session, project_id, external_id)
-        if existing:
-            raise ValueError(f"Place {external_id} already exists in this project")
-
-       
-        artwork = await fetch_artwork(external_id)
-        if artwork is None:
-            raise ValueError(f"Artwork {external_id} not found in Art Institute of Chicago")
-
         return await self._place_repo.create(
             session=session,
             project_id=project_id,
-            external_id=external_id,
-            title=artwork["title"],
-            artist=artwork["artist"],
-            image_url=artwork["image_url"],
+            name=data.name,
+            address=data.address,
+            latitude=data.latitude,
+            longitude=data.longitude,
+            notes=data.notes,
         )
 
     @with_session_readonly
