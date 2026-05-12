@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, useToast } from '../App.jsx';
+import { useAuth, useToast } from '../app.jsx';
 import { getProjects, createProject, deleteProject, updateProject, logout as apiLogout } from '../api.js';
 
 function ProjectModal({ project, onClose, onSaved }) {

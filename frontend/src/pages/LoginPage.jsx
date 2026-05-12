@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth, useToast } from '../App.jsx';
+import { useAuth, useToast } from '../app.jsx';
 import { login as apiLogin } from '../api.js';
 
 export default function LoginPage({ onSwitch }) {

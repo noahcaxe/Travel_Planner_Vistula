@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { getProjects, getPlaces, addPlace, deletePlace, updatePlace, logout as apiLogout } from '../api.js';
-import { useAuth, useToast } from '../App.jsx';
+import { useAuth, useToast } from '../app.jsx';
 import PlaceSearch from '../components/PlaceSearch.jsx';
 
 delete L.Icon.Default.prototype._getIconUrl;
