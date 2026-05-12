@@ -15,6 +15,7 @@ services:
       - .env
     volumes:
       - ./logs:/backend/logs
+      - ./backend/migrations:/backend/migrations
 
   db:
     image: postgres:16
