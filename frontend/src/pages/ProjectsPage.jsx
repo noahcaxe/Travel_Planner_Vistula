@@ -4,20 +4,38 @@ import { useAuth, useToast } from '../App.jsx';
 import { getProjects, createProject, deleteProject, updateProject, logout as apiLogout } from '../api.js';
 
 function ProjectModal({ project, onClose, onSaved }) {
-  const [form, setForm] = useState({ name: project?.name || '', description: project?.description || '' });
+  const [form, setForm] = useState({
+    name: project?.name || '',
+    description: project?.description || '',
+    cover_url: project?.cover_url || '',
+    start_date: project?.start_date || '',
+  });
   const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState(project?.cover_url || '');
   const toast = useToast();
   const isEdit = !!project;
+
+  function handleUrlChange(e) {
+    const val = e.target.value;
+    setForm(f => ({ ...f, cover_url: val }));
+    setPreview(val);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     try {
+      const payload = {
+        name: form.name,
+        description: form.description || null,
+        cover_url: form.cover_url || null,
+        start_date: form.start_date || null,
+      };
       if (isEdit) {
-        await updateProject(project.id, form);
+        await updateProject(project.id, payload);
         toast('Project updated ✓', 'success');
       } else {
-        await createProject(form);
+        await createProject(payload);
         toast('Project created! ✈️', 'success');
       }
       onSaved();
@@ -58,6 +76,41 @@ function ProjectModal({ project, onClose, onSaved }) {
                 style={{ resize: 'vertical' }}
               />
             </div>
+            <div className="field">
+              <label>Start date (optional)</label>
+              <input
+                type="date"
+                value={form.start_date}
+                onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
+              />
+            </div>
+            <div className="field">
+              <label>Cover image URL (optional)</label>
+              <input
+                value={form.cover_url}
+                onChange={handleUrlChange}
+                placeholder="https://example.com/photo.jpg"
+              />
+            </div>
+
+            {preview && (
+              <div style={{ marginBottom: 16 }}>
+                <img
+                  src={preview}
+                  alt="Cover preview"
+                  style={{
+                    width: '100%',
+                    height: 140,
+                    objectFit: 'cover',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border)',
+                  }}
+                  onError={e => { e.target.style.display = 'none'; }}
+                  onLoad={e => { e.target.style.display = 'block'; }}
+                />
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
               <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
               <button type="submit" className="btn btn-primary" style={{ width: 'auto' }} disabled={loading}>
@@ -73,10 +126,19 @@ function ProjectModal({ project, onClose, onSaved }) {
 
 const EMOJIS = ['🗾', '🏔️', '🏖️', '🏛️', '🌿', '🏙️', '🌊', '🏜️', '🌸'];
 
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  return new Date(dateStr).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(null); 
+  const [modal, setModal] = useState(null);
   const { logout } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -147,7 +209,21 @@ export default function ProjectsPage() {
             {projects.map((p, i) => (
               <div key={p.id} className="project-card" onClick={() => navigate(`/projects/${p.id}`)}>
                 <div className="project-card-map">
-                  <div className="project-card-map-placeholder">
+                  {p.cover_url ? (
+                    <img
+                      src={p.cover_url}
+                      alt={p.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={e => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="project-card-map-placeholder"
+                    style={{ display: p.cover_url ? 'none' : 'flex' }}
+                  >
                     {EMOJIS[i % EMOJIS.length]}
                   </div>
                 </div>
@@ -155,8 +231,15 @@ export default function ProjectsPage() {
                   <div className="project-card-name">{p.name}</div>
                   {p.description && <div className="project-card-desc">{p.description}</div>}
                   <div className="project-card-meta">
-                    <div className="project-card-places">
-                      📍 {p.places_count ?? 0} / 10 places
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div className="project-card-places">
+                        📍 {p.places?.length ?? 0} / 10 places
+                      </div>
+                      {p.start_date && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>
+                          🗓️ {formatDate(p.start_date)}
+                        </div>
+                      )}
                     </div>
                     <div className="project-card-actions">
                       <button

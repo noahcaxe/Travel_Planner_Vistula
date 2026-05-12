@@ -6,7 +6,6 @@ import { getProjects, getPlaces, addPlace, deletePlace, updatePlace, logout as a
 import { useAuth, useToast } from '../App.jsx';
 import PlaceSearch from '../components/PlaceSearch.jsx';
 
-// Fix default leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -14,12 +13,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-function createNumberedIcon(n) {
+function createNumberedIcon(n, visited) {
+  const color = visited ? '#4caf50' : 'var(--terra, #c4622d)';
   return L.divIcon({
     className: '',
     html: `<div style="
       width:32px;height:32px;border-radius:50% 50% 50% 0;
-      background:var(--terra, #c4622d);transform:rotate(-45deg);
+      background:${color};transform:rotate(-45deg);
       display:flex;align-items:center;justify-content:center;
       box-shadow:0 2px 8px rgba(0,0,0,0.3);
     "><span style="transform:rotate(45deg);color:#fff;font-size:12px;font-weight:600">${n}</span></div>`,
@@ -156,6 +156,16 @@ export default function ProjectDetailPage() {
     }
   }
 
+  async function handleToggleVisited(e, place) {
+    e.stopPropagation();
+    try {
+      const updated = await updatePlace(id, place.id, { visited: !place.visited });
+      setPlaces(ps => ps.map(p => p.id === place.id ? updated : p));
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
   function handlePlaceClick(place) {
     setActivePlace(place.id);
     if (place.latitude && place.longitude) {
@@ -170,13 +180,15 @@ export default function ProjectDetailPage() {
 
   const defaultCenter = places.find(p => p.latitude)
     ? [places.find(p => p.latitude).latitude, places.find(p => p.latitude).longitude]
-    : [48.8566, 2.3522]; // Paris fallback
+    : [48.8566, 2.3522];
 
   if (loading) return (
     <div className="app-layout">
       <div className="spinner" />
     </div>
   );
+
+  const visitedCount = places.filter(p => p.visited).length;
 
   return (
     <div className="app-layout">
@@ -229,11 +241,12 @@ export default function ProjectDetailPage() {
                 <Marker
                   key={place.id}
                   position={[place.latitude, place.longitude]}
-                  icon={createNumberedIcon(i + 1)}
+                  icon={createNumberedIcon(i + 1, place.visited)}
                   eventHandlers={{ click: () => setActivePlace(place.id) }}
                 >
                   <Popup>
                     <strong>{place.name}</strong>
+                    {place.visited && <> ✅</>}
                     {place.address && <><br /><small>{place.address}</small></>}
                     {place.notes && <><br /><em style={{ fontSize: '0.8rem' }}>{place.notes}</em></>}
                   </Popup>
@@ -246,7 +259,14 @@ export default function ProjectDetailPage() {
           <div className="places-panel">
             <div className="places-panel-header">
               <div className="places-panel-title">Places</div>
-              <span className="badge badge-terra">{places.length} / 10</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {places.length > 0 && (
+                  <span className="badge" style={{ background: 'var(--teal)', color: '#fff', fontSize: '0.72rem' }}>
+                    ✅ {visitedCount} / {places.length} visited
+                  </span>
+                )}
+                <span className="badge badge-terra">{places.length} / 10</span>
+              </div>
             </div>
 
             {places.length === 0 ? (
@@ -265,8 +285,20 @@ export default function ProjectDetailPage() {
                   >
                     <div className="place-item-num">{i + 1}</div>
                     <div className="place-item-info">
-                      <div className="place-item-name">{place.name}</div>
-                      {place.address && <div className="place-item-addr">{place.address}</div>}
+                      <div
+                        className="place-item-name"
+                        style={place.visited ? { textDecoration: 'line-through', opacity: 0.55 } : {}}
+                      >
+                        {place.name}
+                      </div>
+                      {place.address && (
+                        <div
+                          className="place-item-addr"
+                          style={place.visited ? { opacity: 0.45 } : {}}
+                        >
+                          {place.address}
+                        </div>
+                      )}
                       {place.notes && (
                         <div style={{ fontSize: '0.75rem', color: 'var(--teal)', marginTop: 4, fontStyle: 'italic' }}>
                           {place.notes}
@@ -274,6 +306,12 @@ export default function ProjectDetailPage() {
                       )}
                     </div>
                     <div className="place-item-actions">
+                      <button
+                        className="btn btn-ghost btn-icon"
+                        style={{ fontSize: '0.9rem', opacity: place.visited ? 1 : 0.35 }}
+                        onClick={e => handleToggleVisited(e, place)}
+                        title={place.visited ? 'Mark as not visited' : 'Mark as visited'}
+                      >✅</button>
                       <button
                         className="btn btn-ghost btn-icon"
                         style={{ fontSize: '0.9rem' }}

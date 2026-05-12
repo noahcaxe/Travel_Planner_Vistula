@@ -22,7 +22,7 @@ class TravelProject(Base):
     name = Column(String(255), nullable=False)
     description = Column(Text)
     start_date = Column(Date)
-
+    cover_url = Column(String(500))
     is_completed = Column(Boolean, default=False)
 
     created_at = Column(

@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from app.schemas.project_place import ProjectPlaceResponse
 
@@ -10,6 +10,7 @@ class TravelProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str | None = None
     start_date: date | None = None
+    cover_url: str | None = None
 
 
 class TravelProjectUpdate(BaseModel):
@@ -17,6 +18,7 @@ class TravelProjectUpdate(BaseModel):
     description: str | None = None
     start_date: date | None = None
     is_completed: bool | None = None
+    cover_url: str | None = None
 
 
 class TravelProjectResponse(BaseModel):
@@ -27,6 +29,7 @@ class TravelProjectResponse(BaseModel):
     description: str | None = None
     start_date: date | None = None
     is_completed: bool
+    cover_url: str | None = None
 
     created_at: datetime
     updated_at: datetime

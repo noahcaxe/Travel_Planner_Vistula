@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, UniqueConstraint, Integer
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -19,11 +19,10 @@ class ProjectPlace(Base):
         nullable=False,
     )
 
-    external_id = Column(Integer, nullable=False)
-
-    title = Column(String(255), nullable=False)
-    artist = Column(String(255))
-    image_url = Column(String(500))
+    name = Column(String(255), nullable=False)
+    address = Column(String(500))
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
 
     notes = Column(Text)
     visited = Column(Boolean, default=False)
@@ -36,12 +35,4 @@ class ProjectPlace(Base):
     project = relationship(
         "TravelProject",
         back_populates="places",
-    )
-
-    __table_args__ = (
-        UniqueConstraint(
-            "project_id",
-            "external_id",
-            name="uq_project_external_place",
-        ),
     )

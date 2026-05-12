@@ -5,7 +5,11 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ProjectPlaceCreate(BaseModel):
-    external_id: int
+    name: str
+    address: str | None = None
+    latitude: float
+    longitude: float
+    notes: str | None = None
 
 
 class ProjectPlaceUpdate(BaseModel):
@@ -15,15 +19,12 @@ class ProjectPlaceUpdate(BaseModel):
 
 class ProjectPlaceResponse(BaseModel):
     id: uuid.UUID
-    external_id: int
-
-    title: str
-    artist: str | None = None
-    image_url: str | None = None
-
+    name: str
+    address: str | None = None
+    latitude: float
+    longitude: float
     notes: str | None = None
     visited: bool
-
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

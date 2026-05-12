@@ -21,12 +21,13 @@ class UserService:
     ) -> User:
         existing = await self._user_repo.get_by_email(session, data.email)
         if existing:
-            raise ValueError(f"User with email '{data.email}' already exists")
+            raise ValueError(f"User with that email already exists")
 
         password_hash = hash_password(data.password)
 
         user = await self._user_repo.create(
             session=session,
+            username=data.username,
             email=data.email,
             password_hash=password_hash,
         )
