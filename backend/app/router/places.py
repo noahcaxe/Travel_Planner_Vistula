@@ -17,7 +17,7 @@ async def add_place(
     place_service: ProjectPlaceService = Depends(get_place_service),
 ):
     try:
-        return await place_service.add_place(project_id, user_id, data.external_id)
+        return await place_service.add_place(project_id, user_id, data)
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except ValueError as e:
