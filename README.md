@@ -1,8 +1,11 @@
-# Travel Project API
+# Travel Planner
 
-Backend REST API built with **FastAPI**, **PostgreSQL**, **SQLAlchemy Async ORM**, **JWT Authentication**, and **Docker**.
+Full-stack travel planning application built with **FastAPI**, **React**, **PostgreSQL**, **SQLAlchemy Async ORM**, **JWT Authentication**, and **Docker**.
 
-The application allows users to create and manage travel projects with saved places.
+Users can create personal travel projects and organize places inside them. Each project is linked to a user, and places are connected to projects. Integrates OpenStreetMap API for location search.
+
+🔗 **Live Demo:** [https://frontend-travel-planner.onrender.com](https://frontend-travel-planner.onrender.com)  
+📖 **API Docs:** [https://travel-planner-vistula.onrender.com/docs](https://travel-planner-vistula.onrender.com/docs)
 
 ---
 
@@ -27,48 +30,70 @@ The application allows users to create and manage travel projects with saved pla
 - Update place
 - Delete place
 - Maximum 10 places per project
+- Location search via OpenStreetMap (Nominatim API)
 
 ---
 
 # Tech Stack
 
+**Backend**
 - Python 3.12
 - FastAPI
 - PostgreSQL
 - SQLAlchemy Async ORM
 - Alembic
-- Docker & Docker Compose
 - JWT Authentication
 - Pydantic
+
+**Frontend**
+- React
+- Vite
+- Nginx
+
+**Infrastructure**
+- Docker & Docker Compose
+- Render (cloud deployment)
 
 ---
 
 # Project Structure
 
 ```bash
-backend/
-├── app/
-│   ├── core/          # config, security, dependencies
-│   ├── model/         # SQLAlchemy models
-│   ├── repository/    # database queries layer
-│   ├── service/       # business logic layer
-│   ├── router/        # API endpoints
-│   ├── schemas/       # Pydantic schemas
-│   ├── db/            # database setup & session
-│   └── utils/
+Travel_Planner_Vistula/
+├── backend/
+│   ├── app/
+│   │   ├── core/          # config, security, dependencies
+│   │   ├── model/         # SQLAlchemy models
+│   │   ├── repository/    # database queries layer
+│   │   ├── service/       # business logic layer
+│   │   ├── router/        # API endpoints
+│   │   ├── schemas/       # Pydantic schemas
+│   │   ├── db/            # database setup & session
+│   │   └── clients/       # external API clients
+│   ├── migrations/        # Alembic migrations
+│   │   └── versions/
+│   ├── logs/
+│   ├── Dockerfile
+│   └── requirements.txt
 │
-├── migrations/        # Alembic migrations
-├── logs/
-├── Dockerfile
-├── requirements.txt
-└── docker-compose.yml
+├── frontend/
+│   └── src/
+│       ├── components/
+│       └── pages/
+│   ├── Dockerfile
+│   └── nginx.conf
+│
+├── docker-compose.yml     # local development only
+└── .env                   # local environment variables
 ```
 
 ---
 
-# Environment Variables
+# Local Development
 
-Create `.env` file:
+## Environment Variables
+
+Create `.env` file in the root:
 
 ```env
 APP_NAME=Travel Project API
@@ -83,14 +108,11 @@ POSTGRES_PORT=5432
 
 JWT_SECRET=super_secret_key
 JWT_ALGORITHM=HS256
-
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=7
 ```
 
----
-
-# Run Project
+## Run Project
 
 Build and start containers:
 
@@ -98,27 +120,21 @@ Build and start containers:
 docker compose up --build -d
 ```
 
----
+## Database Setup
 
-# Database Setup (IMPORTANT)
-
-## Enter Backend Container
+Enter backend container:
 
 ```bash
 docker exec -it testapp sh
 ```
 
----
-
-## Create Initial Migration
+Create initial migration:
 
 ```bash
 alembic revision --autogenerate -m "init_tables"
 ```
 
----
-
-## Apply Migration
+Apply migration:
 
 ```bash
 alembic upgrade head
@@ -128,57 +144,53 @@ alembic upgrade head
 
 # Alembic Commands
 
-## Create New Migration
-
-```bash
-alembic revision --autogenerate -m "message"
-```
-
-Example:
-
-```bash
-alembic revision --autogenerate -m "add_places_table"
-```
+| Command | Description |
+|---|---|
+| `alembic revision --autogenerate -m "message"` | Create new migration |
+| `alembic upgrade head` | Apply all migrations |
+| `alembic downgrade -1` | Rollback last migration |
+| `alembic current` | Show current revision |
 
 ---
 
-## Apply Migrations
+# Deployment (Render)
 
-```bash
-alembic upgrade head
+The project is deployed on [Render](https://render.com) as three separate services:
+
+| Service | Type | Description |
+|---|---|---|
+| PostgreSQL | Database | Managed PostgreSQL instance |
+| Backend | Web Service | FastAPI app via Docker |
+| Frontend | Web Service | React + Nginx via Docker |
+
+**Backend environment variables on Render:**
+
+```env
+APP_NAME=Travel Project API
+DATABASE_URL=postgresql+asyncpg://user:password@host/dbname
+POSTGRES_USER=...
+POSTGRES_PASSWORD=...
+POSTGRES_DB=...
+POSTGRES_HOST=...
+POSTGRES_PORT=5432
+JWT_SECRET=...
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
 ```
 
----
-
-## Rollback Last Migration
-
-```bash
-alembic downgrade -1
-```
-
----
-
-## Show Current Revision
-
-```bash
-alembic current
-```
+> ⚠️ Free tier PostgreSQL on Render expires after 30 days.  
+> ⚠️ Free web services spin down after 15 minutes of inactivity (cold start ~1 min).  
+> ⚠️ `docker-compose.yml` is for local development only — not used on Render.
 
 ---
 
 # API Documentation
 
-Swagger UI:
-
-```bash
-http://localhost:8000/docs
-```
-
-ReDoc:
-
-```bash
-http://localhost:8000/redoc
-```
+| Interface | URL |
+|---|---|
+| Swagger UI | `http://localhost:8000/docs` |
+| ReDoc | `http://localhost:8000/redoc` |
 
 ---
 
@@ -193,8 +205,6 @@ http://localhost:8000/redoc
 | POST | `/auth/refresh` |
 | POST | `/auth/logout` |
 
----
-
 ## Projects
 
 | Method | Endpoint |
@@ -204,8 +214,6 @@ http://localhost:8000/redoc
 | GET | `/projects/{project_id}` |
 | PATCH | `/projects/{project_id}` |
 | DELETE | `/projects/{project_id}` |
-
----
 
 ## Places
 
